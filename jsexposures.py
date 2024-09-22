@@ -1,9 +1,8 @@
-                                                                                                
 import requests
 import re
 import concurrent.futures
 
-# Banner de la herramienta
+# Tool banner
 def print_banner():
     banner = r"""
 
@@ -16,20 +15,20 @@ def print_banner():
  ▒ ░▒░   ░ ░▒  ░ ░ ░ ░  ░░░   ░▒ ░░▒ ░       ░ ▒ ▒░ ░ ░▒  ░ ░░░▒░ ░ ░   ░▒ ░ ▒░ ░ ░  ░░ ░▒  ░ ░   
  ░ ░ ░   ░  ░  ░     ░    ░    ░  ░░       ░ ░ ░ ▒  ░  ░  ░   ░░░ ░ ░   ░░   ░    ░   ░  ░  ░     
  ░   ░         ░     ░  ░ ░    ░               ░ ░        ░     ░        ░        ░  ░      ░     
-                   jsexposures - Busca exposiciones en archivos JS
-                   Autor: hidalg0d
+                   jsexposures - Search for exposures in JS files
+                   Author: hidalg0d
     """
     print(banner)
 
-# Cargar URLs desde un archivo de texto
+# Load URLs from a text file
 def load_urls_from_file(file_path):
     with open(file_path, 'r') as file:
         urls = [line.strip() for line in file if line.strip()]
     return urls
 
-# Patrones ajustados para buscar exposiciones de información sensible (precompilados)
+# Precompiled patterns to search for sensitive information exposures
 patterns = [
- (re.compile(r'\bAPI_KEY\s*=\s*(?:\'|")?([A-Za-z0-9-_]{20,})(?:\'|")?', re.IGNORECASE), "API Key"),
+    (re.compile(r'\bAPI_KEY\s*=\s*(?:\'|")?([A-Za-z0-9-_]{20,})(?:\'|")?', re.IGNORECASE), "API Key"),
     (re.compile(r'\bAWS_ACCESS_KEY_ID\s*=\s*(?:\'|")?([A-Za-z0-9-_]{20,})(?:\'|")?', re.IGNORECASE), "AWS Access Key ID"),
     (re.compile(r'\bAWS_SECRET_ACCESS_KEY\s*=\s*(?:\'|")?([A-Za-z0-9-_]{40,})(?:\'|")?', re.IGNORECASE), "AWS Secret Access Key"),
     (re.compile(r'\bGOOGLE_API_KEY\s*=\s*(?:\'|")?([A-Za-z0-9-_]{20,})(?:\'|")?', re.IGNORECASE), "Google API Key"),
@@ -55,40 +54,40 @@ patterns = [
     (re.compile(r'\bSENDGRID_API_KEY\s*=\s*(?:\'|")?([A-Za-z0-9-_]{20,})(?:\'|")?', re.IGNORECASE), "SendGrid API Key"),
     (re.compile(r'\bMAILGUN_API_KEY\s*=\s*(?:\'|")?([A-Za-z0-9-_]{20,})(?:\'|")?', re.IGNORECASE), "Mailgun API Key"),
     (re.compile(r'\bPUSHER_APP_KEY\s*=\s*(?:\'|")?([A-Za-z0-9-_]{20})(?:\'|")?', re.IGNORECASE), "Pusher App Key"),
-    # Nuevos patrones
+    # New patterns
     (re.compile(r'\b(?:aws_access_key|aws_secret_key|api key|passwd|pwd|heroku|slack|firebase|swagger|aws key|password|ftp password|jdbc|db|sql|secret jet|config|admin|pwd|json|gcp|htaccess|\.env|ssh key|\.git|access key|secret token|oauth_token|oauth_token_secret|smtp)\s*=\s*(?:\'|")?([A-Za-z0-9-_+=]{6,})(?:\'|")?', re.IGNORECASE), "Sensitive Info"),
 ]
 
-# Función para descargar el archivo .js y buscar coincidencias
+# Function to download the .js file and search for matches
 def check_js_for_secrets(url):
     try:
         response = requests.get(url, timeout=10)
         if response.status_code == 200:
             content = response.text
             results = []
-            found_matches = set()  # Usar un conjunto para evitar duplicados
+            found_matches = set()  # Use a set to avoid duplicates
             for pattern, description in patterns:
                 matches = pattern.findall(content)
                 for match in matches:
-                    if match not in found_matches:  # Solo registrar si no se ha encontrado antes
+                    if match not in found_matches:  # Only log if not found before
                         found_matches.add(match)
                         results.append((url, match, description))
             return results
     except requests.RequestException as e:
-        print(f"Error al acceder a {url}: {e}")
+        print(f"Error accessing {url}: {e}")
     return []
 
-# Función para guardar los resultados en un archivo
+# Function to log results to a file
 def log_results(results):
-    with open('resultados_exposiciones.txt', 'a') as file:
+    with open('exposure_results.txt', 'a') as file:
         for url, match, description in results:
-            file.write(f'He encontrado una exposición: "{match}" ({description}) en la URL "{url}"\n')
+            file.write(f'Found an exposure: "{match}" ({description}) at URL "{url}"\n')
 
-# Función principal para procesar URLs
+# Main function to process URLs
 def process_js_files():
     urls = load_urls_from_file('js_endpoints.txt')
     all_results = []
-    print(f"Se van a procesar {len(urls)} URLs.")
+    print(f"Processing {len(urls)} URLs.")
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
         future_to_url = {executor.submit(check_js_for_secrets, url): url for url in urls}
@@ -98,12 +97,12 @@ def process_js_files():
             results = future.result()
             if results:
                 all_results.extend(results)
-                print(f"Se encontraron resultados en {url}.")
+                print(f"Found results at {url}.")
 
-    log_results(all_results)  # Guardar todos los resultados al final
-    print(f"Análisis completo. Se encontraron {len(all_results)} exposiciones.")
+    log_results(all_results)  # Save all results at the end
+    print(f"Analysis complete. Found {len(all_results)} exposures.")
 
-# Iniciar el análisis
+# Start the analysis
 if __name__ == "__main__":
     print_banner()
     process_js_files()
