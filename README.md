@@ -1,5 +1,7 @@
 # JSEXPOSURES
 
+   ![image](https://github.com/user-attachments/assets/f98c981c-13bf-4e04-a77e-fc6801506559)
+
 jsexposures is a Python tool designed to scan JavaScript files for sensitive information exposure. It helps security researchers and bug bounty hunters identify potential leaks of API keys, tokens, passwords, and other sensitive data in JavaScript endpoints.
 
 ## Features
