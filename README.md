@@ -12,7 +12,7 @@ jsexposures is a Python tool designed to scan JavaScript files for sensitive inf
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/jsexposures.git
+   git clone https://github.com/danielhidalgo2/jsexposures.git
    cd jsexposures 
 
 1.  Install required packages:
