@@ -1,28 +1,3 @@
-python jsexposures.py --file js_endpoints2.txt
-
- ▄▄▄██▀▀▀  ██████ ▓█████ ▒██   ██▒ ██▓███   ▒█████    ██████  █    ██  ██▀███  ▓█████   ██████    
-   ▒██   ▒██    ▒ ▓█   ▀ ▒▒ █ █ ▒░▓██░  ██▒▒██▒  ██▒▒██    ▒  ██  ▓██▒▓██ ▒ ██▒▓█   ▀ ▒██    ▒    
-   ░██   ░ ▓██▄   ▒███   ░░  █   ░▓██░ ██▓▒▒██░  ██▒░ ▓██▄   ▓██  ▒██░▓██ ░▄█ ▒▒███   ░ ▓██▄      
-▓██▄██▓    ▒   ██▒▒▓█  ▄  ░ █ █ ▒ ▒██▄█▓▒ ▒▒██   ██░  ▒   ██▒▓▓█  ░██░▒██▀▀█▄  ▒▓█  ▄   ▒   ██▒   
- ▓███▒   ▒██████▒▒░▒████▒▒██▒ ▒██▒▒██▒ ░  ░░ ████▓▒░▒██████▒▒▒▒█████▓ ░██▓ ▒██▒░▒████▒▒██████▒▒   
- ▒▓▒▒░   ▒ ▒▓▒ ▒ ░░░ ▒░ ░▒▒ ░ ░▓ ░▒▓▒░ ░  ░░ ▒░▒░▒░ ▒ ▒▓▒ ▒ ░░▒▓▒ ▒ ▒ ░ ▒▓ ░▒▓░░░ ▒░ ░▒ ▒▓▒ ▒ ░   
- ▒ ░▒░   ░ ░▒  ░ ░ ░ ░  ░░░   ░▒ ░░▒ ░       ░ ▒ ▒░ ░ ░▒  ░ ░░░▒░ ░ ░   ░▒ ░ ▒░ ░ ░  ░░ ░▒  ░ ░   
- ░ ░ ░   ░  ░  ░     ░    ░    ░  ░░       ░ ░ ░ ▒  ░  ░  ░   ░░░ ░ ░   ░░   ░    ░   ░  ░  ░     
- ░   ░         ░     ░  ░ ░    ░               ░ ░        ░     ░        ░        ░  ░      ░     
-                   jsexposures - Search for exposures in JS files
-                   Author: hidalg0d
-    
-INFO: Loaded 29 URLs from js_endpoints2.txt.
-INFO: Processing 29 URLs.
-INFO: Found results at https://shop.lieferando.de/_nuxtb2b/_nuxt/95eb1ab.js.
-INFO: Analysis complete. Found 1 exposures.
-                                                                                                                                                                                                                                           
-┌──(daniel㉿kali)-[~/jsexposures]
-└─$ cat exposure_results.txt
-Found an exposure: "function" (Password) at URL "https://shop.lieferando.de/_nuxtb2b/_nuxt/95eb1ab.js" | Length: 8
-                                                                                                                                                                                                                                           
-┌──(daniel㉿kali)-[~/jsexposures]
-└─$ cat jsexposures.py      
 import requests
 import re
 import concurrent.futures
