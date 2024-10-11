@@ -11,7 +11,6 @@ JSEXPOSURES
 -   **Multi-Pattern Matching**: Utilizes an extensive set of regular expressions to detect a wide range of sensitive information, such as API keys, credentials, and JWT tokens.
 -   **Sensitive Comment Detection**: Identifies comments that may indicate potential security issues or hidden sensitive information (`TODO`, `FIXME`, `password`, `secret`, etc.).
 -   **Concurrent Requests**: Processes multiple URLs simultaneously to maximize efficiency and speed.
--   **Graceful Exit**: Handles `Ctrl+C` interruptions gracefully, ensuring that the program exits cleanly without losing results.
 -   **Results Logging**: Saves findings in both JSON and text formats for easy review and analysis.
 -   **Customizable Logging Levels**: Allows users to define the level of log verbosity (`DEBUG`, `INFO`, `WARNING`, `ERROR`).
 
@@ -23,18 +22,12 @@ JSEXPOSURES
     `git clone https://github.com/danielhidalgo2/jsexposures.git
     cd jsexposures`
 
-2.  Install the dependencies:
-
-
-    `pip install -r requirements.txt`
-
 📝 Usage
 --------
 
 1.  **Prepare a text file** named `js_endpoints.txt` with URLs of JavaScript files to scan, one URL per line.
 
 2.  Run the tool with basic options:
-
 
     `python jsexposures.py --file js_endpoints.txt --max-workers 15 --log-level DEBUG`
 
@@ -44,7 +37,6 @@ JSEXPOSURES
     -   `exposure_results.json`: JSON file with detailed information about each exposure.
 
 ### ⚙️ Command-Line Options
-
 
 ```
 usage: jsexposures.py [-h] [--file FILE] [--max-workers MAX_WORKERS] [--log-level LOG_LEVEL]
@@ -108,15 +100,11 @@ The tool provides results in two formats for easier analysis:
 -   **Credentials**:
 
     -   Passwords, tokens, authorization headers, and more.
+      
+☕ Support the Project
+---------------------
 
-🤝 Contributing
----------------
-
-Contributions are welcome! If you have suggestions or improvements, feel free to create a pull request or open an issue. Here are a few ways to contribute:
-
--   Propose additional patterns for detecting more secrets.
--   Improve the existing code structure or add new features.
--   Report bugs or suggest improvements in the issue tracker.
+If you find **jsexposures** useful and would like to support the project, consider [buying me a coffee](https://buymeacoffee.com/hidalg0d). Every bit of support is greatly appreciated and helps keep the project alive!
 
 🧑‍💻 Author
 ------------
