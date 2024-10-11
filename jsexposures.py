@@ -1,3 +1,28 @@
+python jsexposures.py --file js_endpoints2.txt
+
+ ▄▄▄██▀▀▀  ██████ ▓█████ ▒██   ██▒ ██▓███   ▒█████    ██████  █    ██  ██▀███  ▓█████   ██████    
+   ▒██   ▒██    ▒ ▓█   ▀ ▒▒ █ █ ▒░▓██░  ██▒▒██▒  ██▒▒██    ▒  ██  ▓██▒▓██ ▒ ██▒▓█   ▀ ▒██    ▒    
+   ░██   ░ ▓██▄   ▒███   ░░  █   ░▓██░ ██▓▒▒██░  ██▒░ ▓██▄   ▓██  ▒██░▓██ ░▄█ ▒▒███   ░ ▓██▄      
+▓██▄██▓    ▒   ██▒▒▓█  ▄  ░ █ █ ▒ ▒██▄█▓▒ ▒▒██   ██░  ▒   ██▒▓▓█  ░██░▒██▀▀█▄  ▒▓█  ▄   ▒   ██▒   
+ ▓███▒   ▒██████▒▒░▒████▒▒██▒ ▒██▒▒██▒ ░  ░░ ████▓▒░▒██████▒▒▒▒█████▓ ░██▓ ▒██▒░▒████▒▒██████▒▒   
+ ▒▓▒▒░   ▒ ▒▓▒ ▒ ░░░ ▒░ ░▒▒ ░ ░▓ ░▒▓▒░ ░  ░░ ▒░▒░▒░ ▒ ▒▓▒ ▒ ░░▒▓▒ ▒ ▒ ░ ▒▓ ░▒▓░░░ ▒░ ░▒ ▒▓▒ ▒ ░   
+ ▒ ░▒░   ░ ░▒  ░ ░ ░ ░  ░░░   ░▒ ░░▒ ░       ░ ▒ ▒░ ░ ░▒  ░ ░░░▒░ ░ ░   ░▒ ░ ▒░ ░ ░  ░░ ░▒  ░ ░   
+ ░ ░ ░   ░  ░  ░     ░    ░    ░  ░░       ░ ░ ░ ▒  ░  ░  ░   ░░░ ░ ░   ░░   ░    ░   ░  ░  ░     
+ ░   ░         ░     ░  ░ ░    ░               ░ ░        ░     ░        ░        ░  ░      ░     
+                   jsexposures - Search for exposures in JS files
+                   Author: hidalg0d
+    
+INFO: Loaded 29 URLs from js_endpoints2.txt.
+INFO: Processing 29 URLs.
+INFO: Found results at https://shop.lieferando.de/_nuxtb2b/_nuxt/95eb1ab.js.
+INFO: Analysis complete. Found 1 exposures.
+                                                                                                                                                                                                                                           
+┌──(daniel㉿kali)-[~/jsexposures]
+└─$ cat exposure_results.txt
+Found an exposure: "function" (Password) at URL "https://shop.lieferando.de/_nuxtb2b/_nuxt/95eb1ab.js" | Length: 8
+                                                                                                                                                                                                                                           
+┌──(daniel㉿kali)-[~/jsexposures]
+└─$ cat jsexposures.py      
 import requests
 import re
 import concurrent.futures
@@ -117,14 +142,7 @@ patterns = [
     (re.compile(r'\bSHOPIFY_SECRET\s*:\s*(?:"|\'|)([A-Za-z0-9-_]{32})(?:"|\'|)', re.IGNORECASE), "Shopify Secret Key"),
     (re.compile(r'\bSHOPIFY_ACCESS_TOKEN\s*:\s*(?:"|\'|)([A-Za-z0-9-_]{32})(?:"|\'|)', re.IGNORECASE), "Shopify Access Token"),
     (re.compile(r'\bGITHUB_CLIENT_SECRET\s*:\s*(?:"|\'|)([A-Za-z0-9-_]{40})(?:"|\'|)', re.IGNORECASE), "GitHub Client Secret"),
-    (re.compile(r'\bGOOGLE_CLOUD_PROJECT\s*:\s*(?:"|\'|)([A-Za-z0-9-_]{20,})(?:"|\'|)', re.IGNORECASE), "Google Cloud Project ID"),
-    
-    # Sensitive Comments
-    (re.compile(r'//.*?(password|secret|token|key|api|todo|fixme|hack|debug|note)', re.IGNORECASE), "Sensitive Comment (Inline)"),
-    (re.compile(r'/\*.*?(password|secret|token|key|api|todo|fixme|hack|debug|note).*?\*/', re.IGNORECASE | re.DOTALL), "Sensitive Comment (Block)"),
-    (re.compile(r'#.*?(password|secret|token|key|api|todo|fixme|hack|debug|note)', re.IGNORECASE), "Sensitive Comment (Hash)"),
-    
-    # Final sensitive info pattern (with correction)
+    (re.compile(r'\bGOOGLE_CLOUD_PROJECT\s*:\s*(?:"|\'|)([A-Za-z0-9-_]{20,})(?:"|\'|)', re.IGNORECASE), "Google Cloud Project ID"), 
     (re.compile(r'\b(?:aws_access_key_id|aws_secret_access_key|api_key|password|client_secret|bearer_token|private_key|github_token|twilio_auth_token|sendgrid_api_key|mailgun_api_key|pusher_app_key)\s*:\s*(?:"|\'|)([A-Za-z0-9-_+=]{20,})(?:"|\'|)', re.IGNORECASE), "Sensitive Info"),
 ]
 
@@ -220,3 +238,4 @@ def main():
 # Start the analysis
 if __name__ == "__main__":
     main()
+              
