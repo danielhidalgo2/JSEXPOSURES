@@ -9,25 +9,25 @@ import time
 import signal
 import sys
 
-# Disable HTTPS warnings
+
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-# Configure logging
+
 def configure_logging(level):
     numeric_level = getattr(logging, level.upper(), None)
     if not isinstance(numeric_level, int):
         raise ValueError(f'Invalid log level: {level}')
     logging.basicConfig(level=numeric_level, format='%(levelname)s: %(message)s')
 
-# Handle Ctrl+C for graceful exit
+
 def signal_handler(sig, frame):
     print("\n[INFO] Exiting program gracefully...")
     sys.exit(0)
 
-# Set the signal handler for SIGINT (Ctrl+C)
+
 signal.signal(signal.SIGINT, signal_handler)
 
-# Tool banner
+
 def print_banner():
     banner = r"""
  ▄▄▄██▀▀▀  ██████ ▓█████ ▒██   ██▒ ██▓███   ▒█████    ██████  █    ██  ██▀███  ▓█████   ██████    
@@ -44,7 +44,6 @@ def print_banner():
     """
     print(banner)
 
-# Load URLs from a text file
 def load_urls_from_file(file_path):
     try:
         with open(file_path, 'r') as file:
@@ -122,10 +121,10 @@ patterns = [
 ]
 
 
-# Function to download the .js file and search for matches
+
 def check_js_for_secrets_and_comments(url, retries=3):
     headers = {
-        "User-Agent": "bugcrowd-researcher"
+        "User-Agent": "security-researcher"
     }
     attempts = 0
     while attempts < retries:
@@ -149,19 +148,19 @@ def check_js_for_secrets_and_comments(url, retries=3):
                 time.sleep(2)  # Wait for 2 seconds before retrying
     return []
 
-# Function to log results to a file
+
 def log_results(results):
     with open('exposure_results.txt', 'a') as file:
         for url, match, description in results:
             file.write(f'Found an exposure: "{match}" ({description}) at URL "{url}" | Length: {len(match)}\n')
 
-# Function to save results as JSON
+
 def save_results_as_json(results):
     formatted_results = [{'url': url, 'match': match, 'description': description, 'length': len(match)} for url, match, description in results]
     with open('exposure_results.json', 'w') as json_file:
         json.dump(formatted_results, json_file, indent=4)
 
-# Main function to process URLs
+
 def process_js_files(file_path, max_workers):
     try:
         urls = load_urls_from_file(file_path)
@@ -194,7 +193,7 @@ def process_js_files(file_path, max_workers):
     except KeyboardInterrupt:
         logging.warning("Process interrupted by user. Exiting...")
 
-# Argument parsing
+
 def main():
     parser = argparse.ArgumentParser(
         description="JS Exposures Finder - A tool to scan JavaScript files for sensitive information.",
@@ -210,7 +209,7 @@ def main():
     print_banner()
     process_js_files(args.file, args.max_workers)
 
-# Start the analysis
+
 if __name__ == "__main__":
     main()
               
