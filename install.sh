@@ -26,7 +26,7 @@ if [[ -f /etc/os-release ]]; then
 	if [[ "$ID" == "arch" || "$ID_LIKE" == *"arch"* ]]; then
 		install_arch
 	elif [[ "$ID" == "debian" || "$ID_LIKE" == *"debian"* ]]; then
-		install debian
+		install_debian
 	else
 		echo "[!] Unsupported OS: Please install via pip"
 		exit 1
