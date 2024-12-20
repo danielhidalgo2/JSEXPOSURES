@@ -19,8 +19,23 @@ JSEXPOSURES
 
 1.  Clone the repository:
 
-    `git clone https://github.com/danielhidalgo2/jsexposures.git
-    cd jsexposures`
+    ``` bash
+    git clone https://github.com/danielhidalgo2/jsexposures.git
+    cd jsexposures
+    ```
+
+1. (Optional) In the event of missing dependencies, there are two options:
+    using a system-wide install (the script automatically detects Debian and Arch based OSs for the apropiate package manager):
+
+    ``` bash
+    chmod +x install.sh && ./install.sh
+    ```
+
+    or if you are using a venv, via pip:
+
+    ``` bash
+    pip install -r requirements.txt
+    ```
 
 📝 Usage
 --------
