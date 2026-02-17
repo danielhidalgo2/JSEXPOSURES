@@ -9,9 +9,14 @@ JSEXPOSURES
 ----------
 
 -   **Multi-Pattern Matching**: Utilizes an extensive set of regular expressions to detect a wide range of sensitive information, such as API keys, credentials, and JWT tokens.
+-   **Intelligent Service Identification**: Automatically identifies which service API keys and tokens belong to (AWS, Google/Firebase, Stripe, GitHub, Twilio, etc.) using pattern matching and context analysis.
+-   **Context-Aware Detection**: Analyzes variable names, comments, URLs, and surrounding code to identify custom/internal APIs and provide meaningful context for findings.
+-   **Minified JavaScript Support**: Enhanced detection in minified files using expanded context windows (500 characters) and URL/domain pattern analysis.
+-   **Entropy-Based Filtering**: Uses Shannon entropy calculations to reduce false positives and identify high-quality secrets.
+-   **Flexible Filtering Modes**: Choose between `strict`, `balanced`, or `loose` modes to control false positive filtering aggressiveness.
 -   **Sensitive Comment Detection**: Identifies comments that may indicate potential security issues or hidden sensitive information (`TODO`, `FIXME`, `password`, `secret`, etc.).
 -   **Concurrent Requests**: Processes multiple URLs simultaneously to maximize efficiency and speed.
--   **Results Logging**: Saves findings in both JSON and text formats for easy review and analysis.
+-   **Results Logging**: Saves findings in both JSON and text formats with severity scores, entropy values, and service identification for easy review and analysis.
 -   **Customizable Logging Levels**: Allows users to define the level of log verbosity (`DEBUG`, `INFO`, `WARNING`, `ERROR`).
 
 📦 Installation
@@ -55,6 +60,8 @@ JSEXPOSURES
 
 ```
 usage: jsexposures.py [-h] [--file FILE] [--max-workers MAX_WORKERS] [--log-level LOG_LEVEL]
+                      [--timeout TIMEOUT] [--no-verify-ssl] [--mode {strict,balanced,loose}]
+                      [--per-file-cap PER_FILE_CAP]
 
 JS Exposures Finder - A tool to scan JavaScript files for sensitive information.
 
@@ -64,11 +71,20 @@ optional arguments:
   --max-workers MAX_WORKERS
                         Number of concurrent threads to use for scanning (default: 10)
   --log-level LOG_LEVEL Set the logging level (default: INFO). Available levels: DEBUG, INFO, WARNING, ERROR.
+  --timeout TIMEOUT     Request timeout in seconds (default: 10)
+  --no-verify-ssl       Don't verify SSL certificates (use with caution)
+  --mode {strict,balanced,loose}
+                        False positive filtering aggressiveness (default: strict)
+                        - strict: Highest precision, fewer false positives
+                        - balanced: Good balance between precision and recall
+                        - loose: Maximum coverage, may include more false positives
+  --per-file-cap PER_FILE_CAP
+                        Maximum findings per file before stopping (default: 200)
 ```
 
 ### 📜 Example Commands
 
-1.  **Basic Scan** with default options:
+1.  **Basic Scan** with default options (strict mode):
 
     `python jsexposures.py --file js_endpoints.txt`
 
@@ -76,45 +92,90 @@ optional arguments:
 
     `python jsexposures.py --file js_endpoints.txt --max-workers 15 --log-level DEBUG`
 
-3.  **Use a Custom File** and reduce concurrent threads:
+3.  **Balanced Mode** for better coverage with acceptable false positives:
 
-    `python jsexposures.py --file custom_endpoints.txt --max-workers 5 --log-level INFO`
+    `python jsexposures.py --file js_endpoints.txt --mode balanced --max-workers 20`
+
+4.  **Loose Mode** for maximum coverage (useful for initial reconnaissance):
+
+    `python jsexposures.py --file js_endpoints.txt --mode loose --log-level DEBUG`
+
+5.  **Custom timeout** for slow-loading JavaScript files:
+
+    `python jsexposures.py --file js_endpoints.txt --timeout 30 --max-workers 5`
+
+6.  **Skip SSL verification** (for testing environments):
+
+    `python jsexposures.py --file custom_endpoints.txt --no-verify-ssl --mode balanced`
 
 📂 Output Formats
 -----------------
 
 The tool provides results in two formats for easier analysis:
 
--   **TXT Output (`exposure_results.txt`)**: Contains a summary of each match with the format:
+-   **TXT Output (`exposure_results.txt`)**: Contains a summary of each match with severity score, service identification, and entropy:
 
-    `Found an exposure: "YOUR_API_KEY_12345" (API Key) at URL "https://example.com/script.js" | Length: 16`
+    `[50] [Firebase] Found: "AIzaSyC8x9y2z3a4b5c6d7e8f9g0h1i2j3k4l5m" (Google API Key) at https://example.com/script.js (line 42, ent=3.456)`
 
 -   **JSON Output (`exposure_results.json`)**: Provides detailed information structured in the following format:
 
-    `[
+    ```json
+    [
         {
             "url": "https://example.com/script.js",
-            "match": "YOUR_API_KEY_12345",
-            "description": "API Key",
-            "length": 16
+            "match": "AIzaSyC8x9y2z3a4b5c6d7e8f9g0h1i2j3k4l5m",
+            "description": "Google API Key",
+            "service": "Firebase",
+            "length": 39,
+            "lineno": 42,
+            "entropy": 3.456,
+            "score": 50
         },
         ...
-    ]`
+    ]
+    ```
 
 📌 Key Patterns Detected
 ------------------------
 
--   **API Keys & Secrets**:
+The tool can detect and identify credentials from numerous services:
 
-    -   `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `GOOGLE_API_KEY`, etc.
+-   **Cloud Providers**:
+    -   AWS (Access Keys, Secret Keys)
+    -   Google Cloud / Firebase (API Keys with service identification)
+    -   Azure, DigitalOcean, Heroku, Vercel, Netlify
+
+-   **Payment & Commerce**:
+    -   Stripe (Live/Test keys)
+    -   Square, Shopify, PayPal
+
+-   **Version Control & Development**:
+    -   GitHub (Personal Access Tokens, OAuth tokens)
+    -   GitLab, Bitbucket
+
+-   **Communication & Messaging**:
+    -   Slack (Bot/User tokens)
+    -   Twilio, SendGrid, Mailgun
+    -   Discord, Telegram
+
+-   **Authentication & Security**:
+    -   JWT tokens (with issuer identification)
+    -   OAuth tokens, Client Secrets
+    -   Private Keys (RSA, EC, OpenSSH)
+
+-   **Analytics & Monitoring**:
+    -   Sentry, Datadog, New Relic
+    -   Amplitude, Mixpanel, Segment
+
+-   **Custom/Internal APIs**:
+    -   Context-aware detection of internal credentials
+    -   Variable name and comment analysis
+    -   URL pattern matching
+
 -   **Sensitive Comments**:
-
     -   `// TODO: Update credentials`
     -   `/* FIXME: Hardcoded password here */`
     -   `# Debug note: Remember to change the key`
--   **Credentials**:
-
-    -   Passwords, tokens, authorization headers, and more.
       
 ☕ Support the Project
 ---------------------
