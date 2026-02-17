@@ -42,6 +42,318 @@ def print_banner():
 """
     print(banner)
 
+# ---------------- Context Extraction ----------------
+def extract_context_clues(context: str, description: str) -> str:
+    """
+    Extract meaningful context clues from surrounding code to identify what the credential is for.
+    Looks at variable names, object properties, comments, URLs, and nearby strings.
+    Works with both regular and minified JavaScript.
+    """
+    # Extract variable/property names from common patterns
+    var_patterns = [
+        r'(?:var|let|const)\s+(\w+)\s*[:=]',  # var/let/const declarations
+        r'(\w+)\s*[:=]\s*["\']',  # property assignments
+        r'["\'](\w+)["\']\s*:\s*["\']',  # object properties
+        r'//\s*(.+?)(?:\n|$)',  # single-line comments
+        r'/\*\s*(.+?)\s*\*/',  # multi-line comments
+    ]
+    
+    clues = []
+    for pattern in var_patterns:
+        matches = re.findall(pattern, context, re.IGNORECASE | re.DOTALL)
+        clues.extend(matches)
+    
+    # For minified JS: Extract nearby string literals and URLs
+    # Look for API endpoints, domain names, and service identifiers
+    url_patterns = [
+        r'https?://([a-zA-Z0-9.-]+)',  # Domain names from URLs
+        r'\.([a-zA-Z0-9-]+)\.(?:com|io|net|org|dev|app)',  # Service domains
+        r'/api/([a-zA-Z0-9_-]+)',  # API endpoint paths
+        r'"([a-zA-Z0-9_-]{3,20})"',  # Nearby quoted strings
+    ]
+    
+    for pattern in url_patterns:
+        matches = re.findall(pattern, context, re.IGNORECASE)
+        clues.extend(matches)
+    
+    # Join all clues and clean up
+    clue_text = ' '.join(clues).lower()
+    
+    # Look for service/purpose indicators in the clues
+    purpose_keywords = {
+        # Databases
+        'database': 'Database', 'db': 'Database', 'mongodb': 'MongoDB', 'mysql': 'MySQL',
+        'postgres': 'PostgreSQL', 'redis': 'Redis', 'dynamodb': 'DynamoDB',
+        'supabase': 'Supabase', 'planetscale': 'PlanetScale',
+        
+        # Authentication/Admin
+        'admin': 'Admin', 'auth': 'Authentication', 'login': 'Login', 'user': 'User Auth',
+        'password': 'Password', 'username': 'Username', 'credential': 'Credentials',
+        'session': 'Session', 'token': 'Token',
+        
+        # Payment/Commerce
+        'payment': 'Payment', 'billing': 'Billing', 'checkout': 'Checkout',
+        'commerce': 'Commerce', 'cart': 'Shopping Cart',
+        
+        # Communication
+        'email': 'Email', 'smtp': 'SMTP', 'mail': 'Email', 'notification': 'Notifications',
+        'sms': 'SMS', 'message': 'Messaging', 'chat': 'Chat',
+        
+        # Analytics/Monitoring
+        'analytics': 'Analytics', 'tracking': 'Tracking', 'monitor': 'Monitoring',
+        'metric': 'Metrics', 'log': 'Logging', 'telemetry': 'Telemetry',
+        
+        # Storage/CDN
+        'storage': 'Storage', 'bucket': 'Storage', 's3': 'S3 Storage', 'cdn': 'CDN',
+        'upload': 'File Upload', 'download': 'File Download', 'media': 'Media',
+        
+        # API/Backend
+        'api': 'API', 'backend': 'Backend', 'server': 'Server', 'endpoint': 'API Endpoint',
+        'webhook': 'Webhook', 'graphql': 'GraphQL', 'rest': 'REST API',
+        
+        # Third-party services (expanded for minified detection)
+        'recaptcha': 'reCAPTCHA', 'captcha': 'CAPTCHA', 'oauth': 'OAuth',
+        'firebase': 'Firebase', 'firestore': 'Firestore',
+        'vercel': 'Vercel', 'netlify': 'Netlify', 'heroku': 'Heroku',
+        'cloudinary': 'Cloudinary', 'imgix': 'Imgix',
+        'amplitude': 'Amplitude', 'mixpanel': 'Mixpanel', 'segment': 'Segment',
+        'intercom': 'Intercom', 'zendesk': 'Zendesk',
+    }
+    
+    # Check for keywords (prioritize longer/more specific matches first)
+    sorted_keywords = sorted(purpose_keywords.items(), key=lambda x: len(x[0]), reverse=True)
+    for keyword, purpose in sorted_keywords:
+        if keyword in clue_text:
+            return purpose
+    
+    # For minified JS: Look for domain-based clues
+    domain_services = {
+        'firebase': 'Firebase',
+        'firebaseio': 'Firebase',
+        'googleapis': 'Google API',
+        'stripe': 'Stripe',
+        'twilio': 'Twilio',
+        'sendgrid': 'SendGrid',
+        'mailgun': 'Mailgun',
+        'cloudflare': 'Cloudflare',
+        'amazonaws': 'AWS',
+        'azure': 'Azure',
+        'digitalocean': 'DigitalOcean',
+        'heroku': 'Heroku',
+        'vercel': 'Vercel',
+        'netlify': 'Netlify',
+        'supabase': 'Supabase',
+        'planetscale': 'PlanetScale',
+        'railway': 'Railway',
+        'render': 'Render',
+    }
+    
+    for domain, service in domain_services.items():
+        if domain in clue_text:
+            return service
+    
+    # Extract from variable names more specifically (works for non-minified)
+    if clues:
+        # Get the most relevant variable name (usually the first one)
+        first_var = clues[0] if clues else ''
+        if first_var and len(first_var) > 2:
+            # Skip single-letter variables (minified code)
+            if len(first_var) == 1:
+                return ""
+            
+            # Clean up common prefixes/suffixes
+            clean_var = first_var.replace('_key', '').replace('_token', '').replace('_secret', '')
+            clean_var = clean_var.replace('key', '').replace('token', '').replace('secret', '')
+            clean_var = clean_var.strip('_')
+            
+            if clean_var and len(clean_var) > 2:
+                # Capitalize and return as service name
+                return clean_var.replace('_', ' ').title()
+    
+    return ""
+
+# ---------------- Service Identification ----------------
+def identify_service(match: str, description: str, context: str = "") -> str:
+    """
+    Identify which service an API key/token belongs to based on patterns and context.
+    Returns the service name or "Unknown" if not identifiable.
+    """
+    match_upper = match.upper()
+    match_lower = match.lower()
+    ctx_lower = context.lower()
+    
+    # First, try to extract context clues for custom/internal APIs
+    context_clue = extract_context_clues(context, description)
+    
+    # AWS patterns
+    if match_upper.startswith("AKIA"):
+        return "AWS"
+    if "aws_secret_access_key" in ctx_lower or "AWS_SECRET_ACCESS_KEY" in context:
+        return "AWS"
+    
+    # Google/Firebase patterns
+    if match.startswith("AIza"):
+        # Check context for more specific service
+        if any(hint in ctx_lower for hint in ["firebase", "firebaseconfig", "firebaseapp"]):
+            return "Firebase"
+        elif any(hint in ctx_lower for hint in ["google", "googleapis", "gcp", "maps", "youtube"]):
+            if "maps" in ctx_lower:
+                return "Google Maps"
+            elif "youtube" in ctx_lower:
+                return "YouTube"
+            else:
+                return "Google Cloud"
+        return "Google/Firebase"
+    
+    # Stripe
+    if match.startswith(("sk_live_", "sk_test_", "pk_live_", "pk_test_", "rk_live_", "rk_test_")):
+        return "Stripe"
+    
+    # GitHub
+    if match.startswith(("ghp_", "gho_", "ghu_", "ghs_", "ghr_")):
+        return "GitHub"
+    
+    # Slack
+    if match.startswith("xox"):
+        if match.startswith("xoxb-"):
+            return "Slack Bot"
+        elif match.startswith("xoxp-"):
+            return "Slack User"
+        return "Slack"
+    
+    # Twilio
+    if match_upper.startswith("SK") and len(match) == 32:
+        if "twilio" in ctx_lower:
+            return "Twilio"
+    if match_upper.startswith("AC") and len(match) == 34:
+        if "twilio" in ctx_lower:
+            return "Twilio Account"
+    
+    # SendGrid
+    if match.startswith("SG."):
+        return "SendGrid"
+    
+    # Mailgun
+    if match.startswith("key-") and "mailgun" in ctx_lower:
+        return "Mailgun"
+    
+    # Heroku
+    if len(match) == 36 and match.count("-") == 4 and "heroku" in ctx_lower:
+        return "Heroku"
+    
+    # Square
+    if match.startswith(("sq0atp-", "sq0csp-")):
+        return "Square"
+    
+    # Shopify
+    if match.startswith("shpat_") or match.startswith("shpss_"):
+        return "Shopify"
+    
+    # PayPal
+    if "paypal" in ctx_lower and (match.startswith("A") or match.startswith("E")):
+        return "PayPal"
+    
+    # JWT tokens
+    if description in ("JWT", "Authorization Header"):
+        # Try to decode and check issuer
+        try:
+            parts = match.split(".")
+            if len(parts) == 3:
+                # Decode header to check for hints
+                header_b64 = parts[0]
+                header_b64 += '=' * (-len(header_b64) % 4)
+                header = json.loads(base64.urlsafe_b64decode(header_b64).decode('utf-8', 'ignore'))
+                
+                # Check payload for issuer
+                payload_b64 = parts[1]
+                payload_b64 += '=' * (-len(payload_b64) % 4)
+                payload = json.loads(base64.urlsafe_b64decode(payload_b64).decode('utf-8', 'ignore'))
+                
+                if 'iss' in payload:
+                    issuer = payload['iss'].lower()
+                    if 'google' in issuer or 'firebase' in issuer:
+                        return "Firebase/Google JWT"
+                    elif 'auth0' in issuer:
+                        return "Auth0 JWT"
+                    elif 'okta' in issuer:
+                        return "Okta JWT"
+                    else:
+                        return f"JWT ({payload['iss']})"
+        except:
+            pass
+        
+        # Use context clue if available
+        if context_clue:
+            return f"JWT - {context_clue}"
+        return "JWT"
+    
+    # Password/Username detection with context
+    if description in ("Password", "Username"):
+        if context_clue:
+            return f"{description} - {context_clue}"
+        return description
+    
+    # Client Secret with context
+    if description == "Client Secret":
+        if context_clue:
+            return f"Client Secret - {context_clue}"
+        return "Client Secret"
+    
+    # Context-based detection for generic API keys
+    if description == "API/Token by Context":
+        # Known third-party services
+        context_hints = {
+            "firebase": "Firebase",
+            "google": "Google",
+            "stripe": "Stripe",
+            "github": "GitHub",
+            "gitlab": "GitLab",
+            "bitbucket": "Bitbucket",
+            "aws": "AWS",
+            "azure": "Azure",
+            "digitalocean": "DigitalOcean",
+            "cloudflare": "Cloudflare",
+            "sendgrid": "SendGrid",
+            "mailchimp": "Mailchimp",
+            "twilio": "Twilio",
+            "slack": "Slack",
+            "discord": "Discord",
+            "telegram": "Telegram",
+            "openai": "OpenAI",
+            "anthropic": "Anthropic",
+            "mapbox": "Mapbox",
+            "algolia": "Algolia",
+            "sentry": "Sentry",
+            "datadog": "Datadog",
+            "newrelic": "New Relic",
+            "pusher": "Pusher",
+            "pubnub": "PubNub",
+        }
+        
+        for hint, service in context_hints.items():
+            if hint in ctx_lower:
+                return service
+        
+        # If no known service, use context clue from variable names/comments
+        if context_clue:
+            return context_clue
+    
+    # Private keys
+    if "Private Key" in description:
+        if "rsa" in ctx_lower:
+            return "RSA Private Key"
+        elif "ec" in ctx_lower or "ecdsa" in ctx_lower:
+            return "EC Private Key"
+        elif "openssh" in ctx_lower:
+            return "OpenSSH Private Key"
+        return "Private Key"
+    
+    # Fallback to context clue if we have one
+    if context_clue:
+        return context_clue
+    
+    return "Unknown"
+
 # ---------------- Entropy & scoring ----------------
 def shannon_entropy(s: str) -> float:
     if not s:
@@ -237,9 +549,9 @@ def check_js_for_secrets_and_comments(session: requests.Session, url: str, mode:
                     continue
                 cand_str = candidate.strip().strip('\'"')
 
-                # Context window for heuristics
-                start = max(0, m.start() - 120)
-                end = min(len(content), m.end() + 120)
+                # Context window for heuristics (larger for minified JS)
+                start = max(0, m.start() - 500)
+                end = min(len(content), m.end() + 500)
                 ctx = content[start:end]
 
                 # Gatekeeper
@@ -248,10 +560,12 @@ def check_js_for_secrets_and_comments(session: requests.Session, url: str, mode:
 
                 lineno = content.count('\n', 0, m.start()) + 1
                 score = score_finding(description, cand_str, runtime=False)
+                service = identify_service(cand_str, description, ctx)
                 findings.append({
                     'url': url,
                     'match': cand_str,
                     'description': description,
+                    'service': service,
                     'length': len(cand_str),
                     'lineno': lineno,
                     'entropy': round(shannon_entropy(cand_str), 3),
@@ -272,7 +586,8 @@ def check_js_for_secrets_and_comments(session: requests.Session, url: str, mode:
 def log_results(results, txt_path='exposure_results.txt'):
     with open(txt_path, 'a') as f:
         for r in results:
-            f.write(f'[{r["score"]}] Found: "{r["match"]}" ({r["description"]}) at {r["url"]} (line {r["lineno"]}, ent={r["entropy"]})\n')
+            service_info = f' [{r["service"]}]' if r.get("service") else ''
+            f.write(f'[{r["score"]}]{service_info} Found: "{r["match"]}" ({r["description"]}) at {r["url"]} (line {r["lineno"]}, ent={r["entropy"]})\n')
 
 def save_results_as_json(results, json_path='exposure_results.json'):
     try:
